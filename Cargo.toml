@@ -1,0 +1,39 @@
+[package]
+name = "cosmic-caffeine"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0"
+description = "A COSMIC applet to prevent system sleep"
+repository = "https://github.com/user/cosmic-caffeine"
+
+[package.metadata.deb]
+maintainer = "Oussama Berchi"
+copyright = "2025, Oussama Berchi"
+assets = [
+    ["target/release/cosmic-caffeine", "usr/bin/", "755"],
+    ["resources/app.desktop", "usr/share/applications/", "644"],
+    ["resources/oussama-berchi-caffeine-cosmic.svg", "usr/share/icons/hicolor/scalable/apps/", "644"],
+]
+
+[dependencies]
+ashpd = { version = "0.12", default-features = false, features = ["tokio"] }
+i18n-embed-fl = "0.10"
+rust-embed = "8.7.2"
+tokio = { version = "1.48.0", features = ["full"] }
+tracing = "0.1"
+
+[dependencies.i18n-embed]
+version = "0.16"
+features = ["fluent-system", "desktop-requester"]
+
+[dependencies.libcosmic]
+git = "https://github.com/pop-os/libcosmic.git"
+features = [
+    "applet",
+    "applet-token",
+    "dbus-config",
+    "multi-window",
+    "tokio",
+    "wayland",
+    "winit",
+]
