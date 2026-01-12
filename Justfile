@@ -17,8 +17,8 @@ build:
 # Install the application
 install: build
     install -Dm755 target/release/cosmic-caffeine {{bin_dir}}/cosmic-caffeine
-    install -Dm644 resources/app.desktop {{applications_dir}}/cosmic-caffeine.desktop
-    install -Dm644 resources/oussama-berchi-caffeine-cosmic.svg {{icons_dir}}/oussama-berchi-caffeine-cosmic.svg
+    install -Dm644 assets/com.github.cosmic-caffeine.desktop {{applications_dir}}/com.github.cosmic-caffeine.desktop
+    install -Dm644 assets/oussama-berchi-caffeine-cosmic.svg {{icons_dir}}/oussama-berchi-caffeine-cosmic.svg
 
 # Package the application as a .deb file
 package:

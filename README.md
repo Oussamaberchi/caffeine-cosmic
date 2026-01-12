@@ -7,6 +7,7 @@ A native Rust applet for Pop!_OS COSMIC to prevent system sleep.
 - **Rust-Powered**: Built with native performance and reliability using libcosmic/iced.
 - **Symbolic Icons**: Clean, scalable SVG icons that adapt to your theme.
 - **Modern UI**: Active state (Brick Red), Inactive state (White), and smooth hover interactions (Scale effect) with no intrusive tooltips.
+- **Multi-Instance Sync**: Seamlessly synchronizes state across Panel, Dock, and other instances via D-Bus.
 
 ## Installation
 
