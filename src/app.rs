@@ -22,7 +22,7 @@ const SYSTEM_ICON_PATH: &str =
 
 const DEV_ICON_PATH: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/resources/oussama-berchi-caffeine-cosmic.svg"
+    "/assets/oussama-berchi-caffeine-cosmic.svg"
 );
 
 fn get_icon_path() -> PathBuf {
@@ -176,7 +176,7 @@ impl cosmic::Application for AppModel {
             icon_widget = icon_widget.class(self.active_icon_style.clone());
         }
 
-        let have_popup = self.popup.clone();
+        let have_popup = self.popup;
 
         let button = widget::button::custom(
             widget::container(icon_widget)
@@ -229,7 +229,7 @@ impl cosmic::Application for AppModel {
                                 }
                             }
                         },
-                        |m| cosmic::Action::App(m),
+                        cosmic::Action::App,
                     );
                 }
             }
@@ -272,7 +272,7 @@ impl cosmic::Application for AppModel {
                             }
                             Message::Hover(false)
                         },
-                        |m| cosmic::Action::App(m),
+                        cosmic::Action::App,
                     );
                 } else {
                     warn!("Proxy not ready, cannot toggle state");
