@@ -1,5 +1,5 @@
 use cosmic::iced::widget::MouseArea;
-use cosmic::iced::{futures, window::Id, Color, Length, Rectangle, Subscription};
+use cosmic::iced::{window::Id, Color, Length, Rectangle, Subscription};
 use cosmic::prelude::*;
 use cosmic::surface::action::{app_popup, destroy_popup};
 use cosmic::theme;
@@ -13,13 +13,12 @@ use tracing::{error, info, warn};
 use crate::backend::CaffeineBackend;
 
 const ACTIVE_COLOR: Color = Color::from_rgb(0.698, 0.133, 0.133);
-
 const SYSTEM_ICON_PATH: &str =
-    "/usr/share/icons/hicolor/scalable/apps/caffeine.svg";
+    "/usr/share/icons/hicolor/scalable/apps/oussama-berchi-caffeine-cosmic.svg";
 
 const DEV_ICON_PATH: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/resources/caffeine-cup-symbolic.svg"
+    "/resources/oussama-berchi-caffeine-cosmic.svg"
 );
 
 fn get_icon_path() -> PathBuf {
@@ -99,6 +98,7 @@ pub enum Message {
     TimerTick,
     TimerExpired,
     PopupClosed(Id),
+    TogglePopup(Rectangle),
     Surface(cosmic::surface::Action),
     Hover(bool),
 }
@@ -174,53 +174,32 @@ impl cosmic::Application for AppModel {
 
         let have_popup = self.popup.clone();
 
-        let button =
-            widget::button::custom(
-                widget::container(icon_widget)
-                    .width(Length::Fill)
-                    .height(Length::Fill)
-                    .align_x(cosmic::iced::alignment::Horizontal::Center)
-                    .align_y(cosmic::iced::alignment::Vertical::Center),
-            )
-                .width(Length::Fixed(
-                    (suggested_size.0 + 2 * horizontal_padding) as f32,
-                ))
-                .height(Length::Fixed(
-                    (suggested_size.1 + 2 * vertical_padding) as f32,
-                ))
-                .class(cosmic::theme::Button::AppletIcon)
-                .on_press_with_rectangle(move |offset, bounds| {
-                    if let Some(id) = have_popup {
-                        Message::Surface(destroy_popup(id))
-                    } else {
-                        Message::Surface(app_popup::<AppModel>(
-                            move |state: &mut AppModel| {
-                                let new_id = Id::unique();
-                                state.popup = Some(new_id);
-
-                                let mut settings = state.core.applet.get_popup_settings(
-                                    state.core.main_window_id().unwrap(),
-                                    new_id,
-                                    None,
-                                    None,
-                                    None,
-                                );
-
-                                settings.positioner.anchor_rect = Rectangle {
-                                    x: (bounds.x - offset.x) as i32,
-                                    y: (bounds.y - offset.y) as i32,
-                                    width: bounds.width as i32,
-                                    height: bounds.height as i32,
-                                };
-
-                                settings
-                            },
-                            Some(Box::new(move |state: &AppModel| {
-                                build_popup_content(state).map(cosmic::Action::App)
-                            })),
-                        ))
-                    }
-                });
+        let button = widget::button::custom(
+            widget::container(icon_widget)
+                .width(Length::Fill)
+                .height(Length::Fill)
+                .align_x(cosmic::iced::alignment::Horizontal::Center)
+                .align_y(cosmic::iced::alignment::Vertical::Center),
+        )
+        .width(Length::Fixed(
+            (suggested_size.0 + 2 * horizontal_padding) as f32,
+        ))
+        .height(Length::Fixed(
+            (suggested_size.1 + 2 * vertical_padding) as f32,
+        ))
+        .class(cosmic::theme::Button::AppletIcon)
+        .on_press_with_rectangle(move |offset, bounds| {
+            if let Some(id) = have_popup {
+                Message::Surface(destroy_popup(id))
+            } else {
+                Message::TogglePopup(Rectangle {
+                    x: bounds.x - offset.x,
+                    y: bounds.y - offset.y,
+                    width: bounds.width,
+                    height: bounds.height,
+                })
+            }
+        });
 
         MouseArea::new(button)
             .on_enter(Message::Hover(true))
@@ -331,6 +310,39 @@ impl cosmic::Application for AppModel {
                 info!("Popup closed: {:?}", id);
                 if self.popup.as_ref() == Some(&id) {
                     self.popup = None;
+                }
+            }
+
+            Message::TogglePopup(anchor_rect) => {
+                if let Some(main_id) = self.core.main_window_id() {
+                    let action = app_popup(
+                        move |state: &mut AppModel| {
+                            let new_id = Id::unique();
+                            state.popup = Some(new_id);
+
+                            let mut settings = state
+                                .core
+                                .applet
+                                .get_popup_settings(main_id, new_id, None, None, None);
+
+                            settings.positioner.anchor_rect = Rectangle {
+                                x: anchor_rect.x as i32,
+                                y: anchor_rect.y as i32,
+                                width: anchor_rect.width as i32,
+                                height: anchor_rect.height as i32,
+                            };
+
+                            settings
+                        },
+                        Some(Box::new(move |state: &AppModel| {
+                            build_popup_content(state).map(cosmic::Action::App)
+                        })),
+                    );
+                    return Task::done(cosmic::Action::Cosmic(cosmic::app::Action::Surface(
+                        action,
+                    )));
+                } else {
+                    error!("Cannot open popup: Main window ID missing");
                 }
             }
 
@@ -462,7 +474,7 @@ fn build_popup_content(state: &AppModel) -> Element<'_, Message> {
 }
 
 fn timer_subscription() -> Subscription<Message> {
-    use futures::stream;
+    use cosmic::iced::futures::stream;
 
     Subscription::run_with_id(
         "caffeine-timer",

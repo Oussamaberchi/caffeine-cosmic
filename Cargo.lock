@@ -990,8 +990,6 @@ name = "cosmic-caffeine"
 version = "0.1.0"
 dependencies = [
  "ashpd 0.12.1",
- "enumflags2",
- "futures-util",
  "i18n-embed",
  "i18n-embed-fl",
  "libcosmic",
