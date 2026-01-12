@@ -1,0 +1,13 @@
+[Desktop Entry]
+Name=Caffeine
+Comment=Prevent system sleep and screen lock
+Type=Application
+Exec=caffeine
+Terminal=false
+Categories=COSMIC;Utility;
+Keywords=COSMIC;caffeine;sleep;power;inhibit;
+Icon=caffeine
+StartupNotify=true
+NoDisplay=true
+X-CosmicApplet=true
+X-CosmicHoverPopup=Auto

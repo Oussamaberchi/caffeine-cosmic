@@ -1,4 +1,4 @@
-use cosmic::iced::widget::tooltip::Position;
+use cosmic::iced::widget::MouseArea;
 use cosmic::iced::{futures, window::Id, Color, Length, Rectangle, Subscription};
 use cosmic::prelude::*;
 use cosmic::surface::action::{app_popup, destroy_popup};
@@ -15,7 +15,7 @@ use crate::backend::CaffeineBackend;
 const ACTIVE_COLOR: Color = Color::from_rgb(0.698, 0.133, 0.133);
 
 const SYSTEM_ICON_PATH: &str =
-    "/usr/share/icons/hicolor/scalable/apps/com.github.cosmic-caffeine.svg";
+    "/usr/share/icons/hicolor/scalable/apps/caffeine.svg";
 
 const DEV_ICON_PATH: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
@@ -87,7 +87,7 @@ pub struct AppModel {
     popup: Option<Id>,
     backend: CaffeineBackend,
     active_icon_style: cosmic::theme::Svg,
-    inactive_icon_style: cosmic::theme::Svg,
+    is_hovered: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -100,6 +100,7 @@ pub enum Message {
     TimerExpired,
     PopupClosed(Id),
     Surface(cosmic::surface::Action),
+    Hover(bool),
 }
 
 impl cosmic::Application for AppModel {
@@ -128,11 +129,6 @@ impl cosmic::Application for AppModel {
                 color: Some(ACTIVE_COLOR),
             }));
 
-        let inactive_style =
-            cosmic::theme::Svg::Custom(Rc::new(|theme| cosmic::iced_widget::svg::Style {
-                color: Some(theme.cosmic().on_bg_color().into()),
-            }));
-
         let app = AppModel {
             core,
             selected_timer: TimerSelection::default(),
@@ -141,7 +137,7 @@ impl cosmic::Application for AppModel {
             popup: None,
             backend: CaffeineBackend::new(),
             active_icon_style: active_style,
-            inactive_icon_style: inactive_style,
+            is_hovered: false,
         };
         (app, Task::none())
     }
@@ -154,12 +150,6 @@ impl cosmic::Application for AppModel {
     fn view(&self) -> Element<'_, Self::Message> {
         let is_active = self.caffeine_state.is_active();
 
-        let icon_style = if is_active {
-            self.active_icon_style.clone()
-        } else {
-            self.inactive_icon_style.clone()
-        };
-
         let icon_handle = ICON_HANDLE.clone();
 
         let suggested_size = self.core.applet.suggested_size(true);
@@ -170,15 +160,28 @@ impl cosmic::Application for AppModel {
             (minor_padding, major_padding)
         };
 
-        let icon_widget = widget::icon::icon(icon_handle)
-            .class(icon_style)
-            .width(Length::Fixed(suggested_size.0 as f32))
-            .height(Length::Fixed(suggested_size.1 as f32));
+        let scale = if self.is_hovered { 1.05 } else { 1.0 };
+        let icon_width = suggested_size.0 as f32 * scale;
+        let icon_height = suggested_size.1 as f32 * scale;
+
+        let mut icon_widget = widget::icon::icon(icon_handle)
+            .width(Length::Fixed(icon_width))
+            .height(Length::Fixed(icon_height));
+
+        if is_active {
+            icon_widget = icon_widget.class(self.active_icon_style.clone());
+        }
 
         let have_popup = self.popup.clone();
 
         let button =
-            widget::button::custom(widget::layer_container(icon_widget).center(Length::Fill))
+            widget::button::custom(
+                widget::container(icon_widget)
+                    .width(Length::Fill)
+                    .height(Length::Fill)
+                    .align_x(cosmic::iced::alignment::Horizontal::Center)
+                    .align_y(cosmic::iced::alignment::Vertical::Center),
+            )
                 .width(Length::Fixed(
                     (suggested_size.0 + 2 * horizontal_padding) as f32,
                 ))
@@ -219,27 +222,10 @@ impl cosmic::Application for AppModel {
                     }
                 });
 
-        let label = match &self.caffeine_state {
-            CaffeineState::Inactive => "Caffeine disabled".to_string(),
-            CaffeineState::Active {
-                selection,
-                remaining_secs,
-            } => match remaining_secs {
-                Some(secs) => {
-                    let mins = secs / 60;
-                    let hours = mins / 60;
-                    let mins = mins % 60;
-                    if hours > 0 {
-                        format!("Caffeine: {}h {}m remaining", hours, mins)
-                    } else {
-                        format!("Caffeine: {}m remaining", mins)
-                    }
-                }
-                None => format!("Caffeine: {} (active)", selection.label()),
-            },
-        };
-
-        widget::tooltip(button, widget::text::body(label), Position::Bottom).into()
+        MouseArea::new(button)
+            .on_enter(Message::Hover(true))
+            .on_exit(Message::Hover(false))
+            .into()
     }
 
     fn update(&mut self, message: Self::Message) -> Task<cosmic::Action<Self::Message>> {
@@ -351,6 +337,10 @@ impl cosmic::Application for AppModel {
             Message::Surface(action) => {
                 info!("Surface action received");
                 return Task::done(cosmic::Action::Cosmic(cosmic::app::Action::Surface(action)));
+            }
+
+            Message::Hover(is_hovered) => {
+                self.is_hovered = is_hovered;
             }
         }
         Task::none()

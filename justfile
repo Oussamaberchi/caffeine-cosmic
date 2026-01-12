@@ -11,6 +11,7 @@ appdata-dst := base-dir / 'share' / 'appdata' / appid + '.metainfo.xml'
 bin-dst := base-dir / 'bin' / name
 desktop-dst := base-dir / 'share' / 'applications' / appid + '.desktop'
 icon-dst := base-dir / 'share' / 'icons' / 'hicolor' / 'scalable' / 'apps' / appid + '.svg'
+icon-theme-dir := base-dir / 'share' / 'icons' / 'hicolor'
 
 # Default recipe which runs `just build-release`
 default: build-release
@@ -52,7 +53,8 @@ install:
     install -Dm0755 {{ cargo-target-dir / 'release' / name }} {{bin-dst}}
     install -Dm0644 resources/app.desktop {{desktop-dst}}
     install -Dm0644 resources/app.metainfo.xml {{appdata-dst}}
-    install -Dm0644 resources/icon.svg {{icon-dst}}
+    install -Dm0644 resources/caffeine-cup-symbolic.svg {{icon-dst}}
+    gtk-update-icon-cache -f -t {{icon-theme-dir}} || true
 
 # Uninstalls installed files
 uninstall:

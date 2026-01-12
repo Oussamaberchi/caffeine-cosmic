@@ -1,31 +1,29 @@
-# COSMIC Applet Template
+# Caffeine for COSMIC
 
-A template for developing applets for the COSMIC™ desktop environment using [libcosmic][libcosmic].
+A native Rust applet for Pop!_OS COSMIC to prevent system sleep.
 
-## Getting Started
+## Features
 
-To create an applet with this template, [install `cargo generate`][cargo-generate] and run:
+- **Rust-Powered**: Built with native performance and reliability using libcosmic/iced.
+- **Symbolic Icons**: Clean, scalable SVG icons that adapt to your theme.
+- **Modern UI**: Active state (Brick Red), Inactive state (White), and smooth hover interactions (Scale effect) with no intrusive tooltips.
 
-```sh
-cargo generate gh:pop-os/cosmic-applet-template
+## Installation
+
+```bash
+git clone https://github.com/Oussamaberchi/caffeine-cosmic.git
+cd caffeine-cosmic
+./install.sh
 ```
 
-A [justfile](./justfile) is included by default with common recipes used by other COSMIC projects. Install from [casey/just][just]
+## Requirements
 
-- `just` builds the applet with the default `just build-release` recipe
-- `just run` builds and runs the applet
-- `just install` installs the project into the system
-- `just vendor` creates a vendored tarball
-- `just build-vendored` compiles with vendored dependencies from that tarball
-- `just check` runs clippy on the project to check for linter warnings
-- `just check-json` can be used by IDEs that support LSP
+- Rust (latest stable)
+- Pop!_OS COSMIC Desktop environment
+- `libssl-dev`, `libwayland-dev`, `libxkbcommon-dev` (standard build dependencies)
 
-## Documentation
+## Usage
 
-Refer to the [libcosmic API documentation][api-docs] and [book][book] for help with building applets with [libcosmic][libcosmic].
-
-[api-docs]: https://pop-os.github.io/libcosmic/cosmic/
-[book]: https://pop-os.github.io/libcosmic-book/
-[cargo-generate]: https://cargo-generate.github.io/cargo-generate/installation.html
-[libcosmic]: https://github.com/pop-os/libcosmic/
-[just]: https://github.com/casey/just
+1. Click the coffee cup icon in the panel to toggle caffeine mode.
+2. Select your preferred duration or use "Infinity" mode.
+3. The icon turns red when active and white when inactive.
