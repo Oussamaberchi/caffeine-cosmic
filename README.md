@@ -17,7 +17,7 @@ Installation requires building the applet locally on your machine, so in additio
 
 - [COSMIC](https://system76.com/cosmic) Desktop environment
 - [Rust](https://rust-lang.org/tools/install/) (latest stable)
-- These library dependencies: `sudo apt install libssl-dev libwayland-dev libxkbcommon-dev`
+- These library dependencies: `libssl-dev`, `libwayland-dev`, `libxkbcommon-dev`
 
 
 ## Installation
