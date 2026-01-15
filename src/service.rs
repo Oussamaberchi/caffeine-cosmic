@@ -1,4 +1,5 @@
 use crate::backend::CaffeineBackend;
+use crate::notify;
 use crate::state::{CaffeineState, TimerSelection};
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -85,14 +86,18 @@ impl CaffeineService {
 
             if let Err(e) = self.backend.inhibit(&reason).await {
                 error!("Failed to inhibit via D-Bus: {}", e);
+                notify::notify_error(&e);
                 return Ok(());
             }
 
+            notify::notify_enabled();
             CaffeineState::active(selection, expiry_ts)
         } else {
             if let Err(e) = self.backend.uninhibit().await {
                 error!("Failed to uninhibit via D-Bus: {}", e);
+                notify::notify_error(&e);
             }
+            notify::notify_disabled();
             CaffeineState::inactive()
         };
 
@@ -100,12 +105,12 @@ impl CaffeineService {
             if let Ok(mut lock) = self.state.lock() {
                 *lock = new_state;
             } else {
-                 error!("Failed to acquire lock on state");
+                error!("Failed to acquire lock on state");
             }
         }
 
         if let Err(e) = ctxt.emit(DBUS_INTERFACE, "StateChanged", &new_state).await {
-             error!("Failed to emit signal: {}", e);
+            error!("Failed to emit signal: {}", e);
         }
         Ok(())
     }

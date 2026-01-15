@@ -12,6 +12,7 @@ use std::time::Duration;
 use tracing::{error, info, warn};
 
 use crate::backend::CaffeineBackend;
+use crate::fl;
 use crate::service::{CaffeineManagerProxy, CaffeineService, DBUS_NAME, DBUS_PATH};
 use crate::state::{CaffeineState, TimerSelection};
 
@@ -218,7 +219,6 @@ impl cosmic::Application for AppModel {
                     info!("D-Bus proxy ready");
                     self.proxy = Some(proxy.clone());
 
-                    // Initial state fetch
                     return Task::perform(
                         async move {
                             match proxy.get_state().await {
@@ -245,7 +245,6 @@ impl cosmic::Application for AppModel {
             }
 
             Message::ToggleCaffeine => {
-                // UI button pressed (Start or Stop)
                 let is_active = self.caffeine_state.is_active();
                 return Task::done(cosmic::Action::App(Message::SetState(!is_active)));
             }
@@ -285,11 +284,11 @@ impl cosmic::Application for AppModel {
             }
 
             Message::TimerTick => {
-                // Check if the timer has expired
                 if let Some(remaining) = self.caffeine_state.remaining_secs() {
                     if remaining == 0 && self.caffeine_state.is_active() {
-                         info!("Timer expired, disabling caffeine");
-                         return Task::done(cosmic::Action::App(Message::SetState(false)));
+                        info!("Timer expired, disabling caffeine");
+                        crate::notify::notify_timer_expired();
+                        return Task::done(cosmic::Action::App(Message::SetState(false)));
                     }
                 }
             }
@@ -366,7 +365,7 @@ impl cosmic::Application for AppModel {
                         Ok(stream) => {
                             info!("Successfully subscribed to state signals");
                             stream.boxed()
-                        },
+                        }
                         Err(e) => {
                             error!("Failed to subscribe to signals: {}", e);
                             stream::pending().boxed()
@@ -375,16 +374,16 @@ impl cosmic::Application for AppModel {
                 })
                 .flatten()
                 .filter_map(|change: zbus::Message| async move {
-                   match change.body().deserialize::<CaffeineState>() {
-                       Ok(state) => {
-                           info!("Received signal: {:?}", state);
-                           Some(Message::StateChanged(state))
-                       },
-                       Err(e) => {
-                           error!("Failed to parse signal body: {}", e);
-                           None
-                       }
-                   }
+                    match change.body().deserialize::<CaffeineState>() {
+                        Ok(state) => {
+                            info!("Received signal: {:?}", state);
+                            Some(Message::StateChanged(state))
+                        }
+                        Err(e) => {
+                            error!("Failed to parse signal body: {}", e);
+                            None
+                        }
+                    }
                 }),
             )
         } else {
@@ -403,22 +402,23 @@ fn build_popup_content(state: &AppModel) -> Element<'_, Message> {
     let spacing = theme::active().cosmic().spacing;
     let is_active = state.caffeine_state.is_active();
 
-    let header = widget::text::heading("Caffeine Mode");
+    let header = widget::text::heading(fl!("caffeine-mode"));
 
     let status_text = if !state.caffeine_state.is_active() {
-        "Caffeine is off".to_string()
+        fl!("status-off")
     } else {
         let selection = state.caffeine_state.selection;
         if let Some(secs) = state.caffeine_state.remaining_secs() {
             let hours = secs / 3600;
             let mins = (secs % 3600) / 60;
-            if hours > 0 {
-                format!("{} - {}h {}m remaining", selection.label(), hours, mins)
+            let time_str = if hours > 0 {
+                format!("{}h {}m", hours, mins)
             } else if mins > 0 {
-                format!("{} - {}m remaining", selection.label(), mins)
+                format!("{}m", mins)
             } else {
-                format!("{} - {}s remaining", selection.label(), secs)
-            }
+                format!("{}s", secs)
+            };
+            format!("{} - {} remaining", selection.label(), time_str)
         } else {
             format!("{} mode active", selection.label())
         }
@@ -429,7 +429,7 @@ fn build_popup_content(state: &AppModel) -> Element<'_, Message> {
     let mut options = widget::column()
         .push(
             widget::radio(
-                widget::text::body("Infinity"),
+                widget::text::body(fl!("timer-infinity")),
                 TimerSelection::Infinity,
                 Some(state.selected_timer),
                 Message::SelectTimer,
@@ -438,7 +438,7 @@ fn build_popup_content(state: &AppModel) -> Element<'_, Message> {
         )
         .push(
             widget::radio(
-                widget::text::body("1 Hour"),
+                widget::text::body(fl!("timer-one-hour")),
                 TimerSelection::OneHour,
                 Some(state.selected_timer),
                 Message::SelectTimer,
@@ -447,7 +447,7 @@ fn build_popup_content(state: &AppModel) -> Element<'_, Message> {
         )
         .push(
             widget::radio(
-                widget::text::body("2 Hours"),
+                widget::text::body(fl!("timer-two-hours")),
                 TimerSelection::TwoHours,
                 Some(state.selected_timer),
                 Message::SelectTimer,
@@ -456,7 +456,7 @@ fn build_popup_content(state: &AppModel) -> Element<'_, Message> {
         );
 
     let manual_radio = widget::radio(
-        widget::text::body("Manual (min)"),
+        widget::text::body(fl!("timer-manual")),
         TimerSelection::Manual,
         Some(state.selected_timer),
         Message::SelectTimer,
@@ -475,11 +475,11 @@ fn build_popup_content(state: &AppModel) -> Element<'_, Message> {
     options = options.push(manual_row).spacing(spacing.space_xxs);
 
     let action_button = if is_active {
-        widget::button::destructive("Stop Caffeine")
+        widget::button::destructive(fl!("stop-caffeine"))
             .on_press(Message::ToggleCaffeine)
             .width(Length::Fill)
     } else {
-        widget::button::suggested("Start Caffeine")
+        widget::button::suggested(fl!("start-caffeine"))
             .on_press(Message::ToggleCaffeine)
             .width(Length::Fill)
     };

@@ -12,3 +12,19 @@ debian/*
 !debian/install
 !debian/rules
 !debian/source.vscode/
+
+# Distribution artifacts
+*.deb
+*.rpm
+*.tar.gz
+*.AppImage
+*.snap
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
