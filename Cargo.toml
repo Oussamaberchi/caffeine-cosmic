@@ -1,6 +1,6 @@
 [package]
 name = "cosmic-caffeine"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "MIT"
 description = "Caffeine for COSMIC - Prevent screen sleep, display timeout, and suspend. Native Rust applet for Pop!_OS COSMIC desktop with timer options and multiple inhibit modes."
