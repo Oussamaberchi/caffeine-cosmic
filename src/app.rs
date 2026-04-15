@@ -195,6 +195,7 @@ impl cosmic::Application for AppModel {
 
         let have_popup = self.popup;
         let tooltip_text = self.get_tooltip_text();
+        let current_state = is_active;
 
         let button = widget::button::custom(
             widget::container(
@@ -222,6 +223,8 @@ impl cosmic::Application for AppModel {
         .on_press_with_rectangle(move |offset, bounds| {
             if let Some(id) = have_popup {
                 Message::Surface(destroy_popup(id))
+            } else if current_state {
+                Message::SetState(false)
             } else {
                 Message::TogglePopup(Rectangle {
                     x: bounds.x - offset.x,
