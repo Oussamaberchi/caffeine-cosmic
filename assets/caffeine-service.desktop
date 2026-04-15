@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Caffeine Service
+Exec=cosmic-caffeine --dbu-service-only
+Icon=oussama-berchi-caffeine-cosmic
+X-GNOME-Autostart-enabled=true
+X-GNOME-Autostart-phase=Initialization
+X-GNOME-Autostart-after-failure=xdg-desktop-portal
+X-COSMIC-Autostart-enabled=true
