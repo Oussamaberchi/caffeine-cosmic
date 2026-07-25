@@ -13,11 +13,14 @@ fn show_notification(title: &str, body: &str, urgency: Urgency, timeout: i32) {
         return;
     }
 
+    let title = title.to_string();
+    let body = body.to_string();
+
     thread::spawn(move || {
         if let Err(e) = Notification::new()
             .appname("Caffeine")
-            .summary(title)
-            .body(body)
+            .summary(&title)
+            .body(&body)
             .icon("caffeine")
             .hint(notify_rust::Hint::DesktopEntry(APP_ID.to_string()))
             .urgency(urgency)
@@ -57,7 +60,12 @@ pub fn notify_timer_expired() {
 
 pub fn notify_warning(remaining_mins: u32) {
     let title = fl!("notification-warning-title");
-    let body = format!("{} {} {}", fl!("notification-warning-body"), remaining_mins, fl!("notification-minutes-left"));
+    let body = format!(
+        "{} {} {}",
+        fl!("notification-warning-body"),
+        remaining_mins,
+        fl!("notification-minutes-left")
+    );
     show_notification(&title, &body, Urgency::Normal, 5000);
 }
 

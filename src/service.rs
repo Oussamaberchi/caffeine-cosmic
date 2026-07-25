@@ -1,6 +1,7 @@
 use crate::backend::CaffeineBackend;
 use crate::config::{CaffeineConfig, InhibitMode};
 use crate::notify;
+use crate::fl;
 use crate::state::{CaffeineState, TimerSelection};
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
