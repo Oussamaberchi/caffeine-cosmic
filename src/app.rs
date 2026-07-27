@@ -1,5 +1,5 @@
 use cosmic::iced::futures::{stream, StreamExt};
-use cosmic::iced::{window::Id, Color, Length, Rectangle, Subscription};
+use cosmic::iced::{widget::stack, window::Id, Color, Length, Rectangle, Subscription};
 use cosmic::prelude::*;
 use cosmic::surface::action::{app_popup, destroy_popup};
 use cosmic::theme;
@@ -94,12 +94,15 @@ impl cosmic::Application for AppModel {
         info!("Caffeine applet initialized");
 
         let config = CaffeineConfig::load();
-        let active_style = cosmic::theme::Svg::Custom(Rc::new(|_theme| cosmic::iced_widget::svg::Style {
-            color: Some(ACTIVE_COLOR),
-        }));
+        let active_style =
+            cosmic::theme::Svg::Custom(Rc::new(|_theme| cosmic::iced_widget::svg::Style {
+                color: Some(ACTIVE_COLOR),
+            }));
 
-        info!("Loaded config: timer={:?}, manual_mins={}, auto_start={}",
-            config.last_timer, config.manual_mins, config.auto_start);
+        info!(
+            "Loaded config: timer={:?}, manual_mins={}, auto_start={}",
+            config.last_timer, config.manual_mins, config.auto_start
+        );
 
         let app = AppModel {
             core,
@@ -196,18 +199,18 @@ impl cosmic::Application for AppModel {
         let have_popup = self.popup;
         let tooltip_text = self.get_tooltip_text();
         let current_state = is_active;
+        let theme = cosmic::theme::active();
 
         let button = widget::button::custom(
-            widget::container(
-                widget::stack()
-                    .push(icon_widget)
-                    .push(
-                        widget::text::caption(tooltip_text)
-                            .color(cosmic::theme::active().cosmic().applet.icon_color)
-                            .size(10),
-                    )
-                    .align_y(cosmic::iced::Alignment::Center),
-            )
+            widget::container(stack![
+                icon_widget,
+                widget::text::caption(tooltip_text)
+                    .class(cosmic::theme::Text::Color(
+                        theme.cosmic().palette.neutral_9.into()
+                    ))
+                    .size(10)
+                    .center(),
+            ])
             .width(Length::Fill)
             .height(Length::Fill)
             .align_x(cosmic::iced::alignment::Horizontal::Center)
@@ -304,7 +307,9 @@ impl cosmic::Application for AppModel {
                                 TimerSelection::TwoHours => (5, 0),
                                 TimerSelection::ThreeHours => (6, 0),
                                 TimerSelection::FourHours => (7, 0),
-                                TimerSelection::Manual => (8, manual_input.parse::<u32>().unwrap_or(30)),
+                                TimerSelection::Manual => {
+                                    (8, manual_input.parse::<u32>().unwrap_or(30))
+                                }
                             };
 
                             if let Err(e) = proxy.set_state(active, idx, mins).await {
@@ -398,9 +403,7 @@ impl cosmic::Application for AppModel {
 
             Message::ClosePopup => {
                 if let Some(id) = self.popup {
-                    return Task::done(cosmic::Action::App(Message::Surface(
-                        destroy_popup(id),
-                    )));
+                    return Task::done(cosmic::Action::App(Message::Surface(destroy_popup(id))));
                 }
             }
         }
@@ -537,9 +540,9 @@ fn build_popup_content(state: &AppModel) -> Element<'_, Message> {
             if let Some(remaining) = state.caffeine_state.remaining_secs() {
                 let progress = remaining as f32 / total as f32;
                 Some(
-                    widget::progress_bar(0.0, 1.0, progress)
+                    widget::progress_bar(0.0..=1.0, progress)
                         .height(Length::Fixed(4.0))
-                        .class(cosmic::theme::ProgressBar::Default),
+                        .class(cosmic::theme::ProgressBar::Primary),
                 )
             } else {
                 None
@@ -654,27 +657,27 @@ fn build_popup_content(state: &AppModel) -> Element<'_, Message> {
             widget::button::text(fl!("inhibit-idle"))
                 .on_press(Message::SetInhibitMode(InhibitMode::Idle))
                 .class(if state.inhibit_mode == InhibitMode::Idle {
-                    cosmic::theme::Button::Secondary
+                    cosmic::theme::Button::Suggested
                 } else {
-                    cosmic::theme::Button::Ghost
+                    cosmic::theme::Button::Text
                 }),
         )
         .push(
             widget::button::text(fl!("inhibit-suspend"))
                 .on_press(Message::SetInhibitMode(InhibitMode::Suspend))
                 .class(if state.inhibit_mode == InhibitMode::Suspend {
-                    cosmic::theme::Button::Secondary
+                    cosmic::theme::Button::Suggested
                 } else {
-                    cosmic::theme::Button::Ghost
+                    cosmic::theme::Button::Text
                 }),
         )
         .push(
             widget::button::text(fl!("inhibit-both"))
                 .on_press(Message::SetInhibitMode(InhibitMode::Both))
                 .class(if state.inhibit_mode == InhibitMode::Both {
-                    cosmic::theme::Button::Secondary
+                    cosmic::theme::Button::Suggested
                 } else {
-                    cosmic::theme::Button::Ghost
+                    cosmic::theme::Button::Text
                 }),
         )
         .spacing(spacing.space_xs);
@@ -701,15 +704,15 @@ fn build_popup_content(state: &AppModel) -> Element<'_, Message> {
         .push(manual_row)
         .push(widget::divider::horizontal::light())
         .push(inhibit_options)
-        .push(
-            widget::divider::horizontal::light(),
-        )
+        .push(widget::divider::horizontal::light())
         .push(action_button)
         .spacing(spacing.space_s)
         .padding([spacing.space_s, spacing.space_m]);
 
     let content = if let Some(pbar) = progress_bar {
-        content.push(widget::divider::horizontal::light()).push(pbar)
+        content
+            .push(widget::divider::horizontal::light())
+            .push(pbar)
     } else {
         content
     };
